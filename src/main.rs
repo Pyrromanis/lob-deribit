@@ -1,8 +1,7 @@
 extern crate core;
 
-use crate::lib::{empty_change, empty_snapshot, get_change, get_snapshot, update_book};
-
-mod lib;
+pub mod functions;
+pub mod defines;
 
 use crate::Message::Text;
 use futures_util::{SinkExt, StreamExt};
@@ -10,6 +9,7 @@ use serde_json::Value;
 use std::time::Duration;
 use tokio::time;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
+use lob_deribit::functions::{empty_snapshot, get_snapshot, get_change, empty_change,update_book};
 
 #[tokio::main]
 async fn main() {
@@ -22,7 +22,6 @@ async fn main() {
         let (ws_stream, _) = connect_async(url).await.expect("Failed to connect");
         println!("\nWebSocket handshake has been successfully completed!\n");
 
-        //split the stream to write that we use to perform the subscribe action and read which is the stream
         let (mut write, mut read) = ws_stream.split();
 
         let data = r#"{
@@ -43,7 +42,6 @@ async fn main() {
         read.next().await;
         let first_message = read.next().await;
 
-        //if everything went nicely get the snapshot
         let snapshot;
         match first_message {
             Some(Ok(Text(msg))) => {
@@ -55,7 +53,6 @@ async fn main() {
             Ok(book) => book,
             Err(error) => panic!("Error getting the snapshot: {}!", error),
         };
-        //the timer for the print function
         let mut interval = time::interval(Duration::from_secs(1));
         //the book transformation/printing loop. Keep reading (unless id mismatch) and transforming
         //as well as printing
@@ -92,7 +89,6 @@ async fn main() {
                 },
             }
         }
-        //we only get here in case we need to reconnect
         continue;
     }
 }
